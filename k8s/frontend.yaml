@@ -15,10 +15,15 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: stylehub-frontend:latest
-        imagePullPolicy: IfNotPresent
+        image: kamakshi97/stylehub-frontend:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
+        env:
+        - name: USER_SERVICE_URL
+          value: http://user-service:8000
+        - name: INVENTORY_SERVICE_URL
+          value: http://inventory-service:8000
 ---
 apiVersion: v1
 kind: Service

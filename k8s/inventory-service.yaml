@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
       - name: inventory-service
-        image: stylehub-inventory-service:latest
-        imagePullPolicy: IfNotPresent
+        image: kamakshi97/stylehub-inventory-service:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
         env:

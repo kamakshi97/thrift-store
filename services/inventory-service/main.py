@@ -57,6 +57,19 @@ def create_item(item: ItemCreate, db: Session = Depends(get_db)):
 def list_items(db: Session = Depends(get_db)):
     return db.query(ItemDB).all()
 
+@app.put("/items/{item_id}", response_model=ItemResponse)
+def update_item(item_id: int, item: ItemCreate, db: Session = Depends(get_db)):
+    db_item = db.query(ItemDB).filter(ItemDB.id == item_id).first()
+    if not db_item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    db_item.name = item.name
+    db_item.category = item.category
+    db_item.color = item.color
+    db_item.stock = item.stock
+    db.commit()
+    db.refresh(db_item)
+    return db_item
+
 @app.delete("/items/{item_id}")
 def delete_item(item_id: int, db: Session = Depends(get_db)):
     db_item = db.query(ItemDB).filter(ItemDB.id == item_id).first()

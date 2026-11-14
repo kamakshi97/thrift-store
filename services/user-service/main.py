@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.exc import IntegrityError
 
 # Get database URL from environment variable (injected by Kubernetes)
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/stylehub")
@@ -62,6 +63,25 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
 @app.get("/users", response_model=list[UserResponse])
 def list_users(db: Session = Depends(get_db)):
     return db.query(UserDB).all()
+
+@app.put("/users/{user_id}", response_model=UserResponse)
+def update_user(user_id: int, user: UserCreate, db: Session = Depends(get_db)):
+    db_user = db.query(UserDB).filter(UserDB.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    existing = db.query(UserDB).filter(UserDB.email == user.email, UserDB.id != user_id).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    db_user.email = user.email
+    db_user.full_name = user.full_name
+    db_user.role = user.role
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Email already registered")
+    db.refresh(db_user)
+    return db_user
 
 @app.delete("/users/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db)):
